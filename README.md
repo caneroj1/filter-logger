@@ -1,2 +1,3 @@
 # filter-logger
-Filterable request logging as wai middleware
+
+Filterable request logging as wai middleware.
