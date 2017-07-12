@@ -1,5 +1,6 @@
 # filter-logger
 [Hackage](https://hackage.haskell.org/package/filter-logger#readme)
+[![Build Status](https://travis-ci.org/caneroj1/filter-logger.svg?branch=master)](https://travis-ci.org/caneroj1/filter-logger)
 
 Filterable request logging as a wai middleware. Change what data is logged and when.
 
