@@ -9,12 +9,16 @@ import qualified Data.ByteString                      as BS hiding (ByteString)
 import qualified Data.ByteString.Lazy                 as BL (ByteString,
                                                              fromStrict,
                                                              toStrict)
+import           Data.Char
 import           Data.Default
 import           Data.Semigroup
+import           Data.Word
+import           Network.HTTP.Types.Status
 import           Network.Wai
 import           Network.Wai.Middleware.RequestLogger
 import           System.IO.Unsafe
 import           System.Log.FastLogger
+import           Text.Printf                          (printf)
 
 -- | Typeclass for types that can be converted into a strict 'ByteString'
 -- and be shown in a log.
@@ -55,10 +59,40 @@ logFilter bs lf = prep bs >>= lf
 -- will log messages where the request body of the incoming request passes
 -- the filter.
 mkFilterLogger :: (Loggable a) => Bool -> LogFilter a -> Middleware
-mkFilterLogger True  lf = unsafePerformIO $ mkRequestLogger def { outputFormat = CustomOutputFormatWithDetails $ customDetailedOutputFormatter lf }
-mkFilterLogger False lf = unsafePerformIO $ mkRequestLogger def { outputFormat = CustomOutputFormatWithDetails $ customDetailedOutputFormatter lf }
+mkFilterLogger detailed lf = unsafePerformIO $
+  mkRequestLogger def { outputFormat = CustomOutputFormatWithDetails $ customOutputFormatter detailed lf }
 {-# NOINLINE mkFilterLogger #-}
 
-customDetailedOutputFormatter :: (Loggable a) => LogFilter a -> OutputFormatterWithDetails
-customDetailedOutputFormatter lf date req status responseSize time reqBody builder =
-  maybe mempty ((<>) "\n" . toLogStr . logShow) $ logFilter (BS.concat reqBody) lf
+customOutputFormatter :: (Loggable a) => Bool -> LogFilter a -> OutputFormatterWithDetails
+customOutputFormatter detail lf date req status responseSize time reqBody builder =
+  maybe mempty (logString detail) $ logFilter (BS.concat reqBody) lf
+  where
+    toBS   = BS.pack . map (fromIntegral . ord)
+
+    dfromRational :: Rational -> Double
+    dfromRational = fromRational
+
+    inMS   = printf "%.2f" . dfromRational $ toRational time * 1000
+
+    header = date <> "\n" <>
+             toBS (show . fromIntegral $ statusCode status) <> " - " <> statusMessage status <> "\n"
+
+    buildRespSize (Just s) = "Response Size: " <> toBS (show s) <> "\n"
+    buildRespSize Nothing  = ""
+
+    buildDuration = toBS inMS <> "ms" <> "\n"
+
+    buildDetails True  = buildRespSize responseSize <> buildDuration
+    buildDetails False = ""
+
+    logString detailed msg = toLogStr (
+      header              <>
+      buildDetails detail <>
+      logShow msg         <>
+      "\n")
+
+
+
+
+
+
