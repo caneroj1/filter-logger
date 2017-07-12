@@ -1,4 +1,5 @@
 # filter-logger
+[Hackage](https://hackage.haskell.org/package/filter-logger#readme)
 
 Filterable request logging as a wai middleware. Change what data is logged and when.
 
