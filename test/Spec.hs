@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import           Control.Monad                                (void)
+import           Control.Monad
 import qualified Data.ByteString                              as BS
 import           Data.Monoid
 import           Network.Wai.Middleware.FilterLogger.Internal
@@ -26,10 +26,10 @@ advancedTests = map TestCase [
   ]
 
 runFilterUnitTest :: Maybe BS.ByteString -> BS.ByteString -> LogFilter BS.ByteString -> Assertion
-runFilterUnitTest expectation input lf = expectation @=? operate lf input
+runFilterUnitTest expectation input lf = expectation @=? lf input
 
 invert :: LogFilter a -> LogFilter a
-invert lf = LogFilter (\a -> maybe (Just a) (const Nothing) $ operate lf a)
+invert lf a = maybe (Just a) (const Nothing) $ lf a
 
 contains :: BS.ByteString -> BS.ByteString -> Bool
 contains t = not . BS.null . snd . BS.breakSubstring t
@@ -40,19 +40,18 @@ simpleFilter t bs
   | otherwise         = Nothing
 
 noFilter :: Assertion
-noFilter = runFilterUnitTest (Just "MyByteString") "MyByteString" mempty
+noFilter = runFilterUnitTest (Just "MyByteString") "MyByteString" return
 
 simpleFilterKeep :: Assertion
 simpleFilterKeep = runFilterUnitTest (Just "MyByteString") "MyByteString" testFilter
-  where testFilter = mempty <> mkFilter (simpleFilter "Str")
+  where testFilter = simpleFilter "Str"
 
 simpleFilterDiscard :: Assertion
 simpleFilterDiscard = runFilterUnitTest Nothing "MyByteString" testFilter
-  where testFilter = mempty <> invert (mkFilter $ simpleFilter "Str")
+  where testFilter = invert (simpleFilter "Str")
 
 doubleFilter :: LogFilter BS.ByteString
-doubleFilter = mkFilter (simpleFilter "Test") <>
-               mkFilter lenCheck
+doubleFilter = simpleFilter "Test" >=> lenCheck
   where lenCheck s
           | BS.length s > 4 = Just s
           | otherwise       = Nothing

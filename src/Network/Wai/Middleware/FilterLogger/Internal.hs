@@ -1,6 +1,5 @@
 {-# OPTIONS_HADDOCK prune #-}
-{-# LANGUAGE Rank2Types   #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Middleware.FilterLogger.Internal where
 
@@ -62,4 +61,4 @@ mkFilterLogger False lf = unsafePerformIO $ mkRequestLogger def { outputFormat =
 
 customDetailedOutputFormatter :: (Loggable a) => LogFilter a -> OutputFormatterWithDetails
 customDetailedOutputFormatter lf date req status responseSize time reqBody builder =
-  maybe mempty (toLogStr . logShow) $ logFilter (BS.concat reqBody) lf
+  maybe mempty ((<>) "\n" . toLogStr . logShow) $ logFilter (BS.concat reqBody) lf
