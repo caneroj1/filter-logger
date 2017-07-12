@@ -41,29 +41,24 @@ instance LogFilterable BL.ByteString where
 
 class (LogFilterable a, LogShowable a) => Loggable a where
 
-type LogFilter a = a -> Maybe a
+instance Loggable ByteString where
+instance Loggable BL.ByteString where
 
 -- | Type that represents a log filtering function. If the return type
 -- is Nothing, then no log message will be created. Otherwise, a log message
 -- will be created using the (potentially modified) returned value
--- newtype LogFilter a = LogFilter {
---     operate :: (LogFilterable a, LogShowable a) => a -> Maybe a
---   }
+type LogFilter a = a -> Maybe a
 
-
-logFilter :: (LogFilterable a, LogShowable a) => ByteString -> LogFilter a -> Maybe a
+logFilter :: (Loggable a) => ByteString -> LogFilter a -> Maybe a
 logFilter bs lf = prep bs >>= lf
 
--- sequenceFilter :: LogFilter a -> LogFilter a -> LogFilter a
--- sequenceFilter llf rlf = LogFilter (operate llf >=> operate rlf)
-
--- | Given a 'LogFilter', construct a 'Middleware' value that
+-- | Given a valid 'LogFilter', construct a 'Middleware' value that
 -- will log messages where the request body of the incoming request passes
 -- the filter.
 mkFilterLogger :: (Loggable a) => Bool -> LogFilter a -> Middleware
-mkFilterLogger True  lf = unsafePerformIO undefined
-mkFilterLogger False lf = unsafePerformIO undefined
-  where reqLogger = mkRequestLogger def { outputFormat = CustomOutputFormatWithDetails $ customDetailedOutputFormatter lf }
+mkFilterLogger True  lf = unsafePerformIO $ mkRequestLogger def { outputFormat = CustomOutputFormatWithDetails $ customDetailedOutputFormatter lf }
+mkFilterLogger False lf = unsafePerformIO $ mkRequestLogger def { outputFormat = CustomOutputFormatWithDetails $ customDetailedOutputFormatter lf }
+{-# NOINLINE mkFilterLogger #-}
 
 customDetailedOutputFormatter :: (Loggable a) => LogFilter a -> OutputFormatterWithDetails
 customDetailedOutputFormatter lf date req status responseSize time reqBody builder =

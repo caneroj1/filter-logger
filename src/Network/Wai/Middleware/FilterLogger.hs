@@ -5,5 +5,5 @@ module Network.Wai.Middleware.FilterLogger
 
 import           Network.Wai.Middleware.FilterLogger.Internal as X (LogFilter, LogFilterable,
                                                                     LogShowable,
-                                                                    mkFilter,
+                                                                    Loggable,
                                                                     mkFilterLogger)
