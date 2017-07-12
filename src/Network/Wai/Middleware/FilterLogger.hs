@@ -4,6 +4,6 @@ module Network.Wai.Middleware.FilterLogger
 ) where
 
 import           Network.Wai.Middleware.FilterLogger.Internal as X (LogFilter, LogFilterable,
+                                                                    LogShowable,
                                                                     mkFilter,
                                                                     mkFilterLogger)
-

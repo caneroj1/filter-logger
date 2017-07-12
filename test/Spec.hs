@@ -26,7 +26,7 @@ advancedTests = map TestCase [
   ]
 
 runFilterUnitTest :: Maybe BS.ByteString -> BS.ByteString -> LogFilter BS.ByteString -> Assertion
-runFilterUnitTest expectation input lf = expectation @=? unwrap lf input
+runFilterUnitTest expectation input lf = expectation @=? operate lf input
 
 invert :: LogFilter a -> LogFilter a
 invert lf = LogFilter (\a -> maybe (Just a) (const Nothing) $ operate lf a)
