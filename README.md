@@ -4,7 +4,7 @@ Filterable request logging as a wai middleware. Change what data is logged and w
 
 ## Usage
 
-Here is one example from the **examples/password** directory where we use the filter logger to implement password filtering. The example uses `scotty` for our web server.
+Here is one example from the **examples/password** directory where we use the filter logger to implement password filtering. The example uses `scotty` for our web server, and we use the `logShowJSON` and `logFilterJSON` helper functions to help us create our instances.
 
 ### Password Filtering
 
