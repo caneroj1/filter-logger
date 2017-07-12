@@ -26,7 +26,7 @@ import           Text.Printf                          (printf)
 -- | Typeclass for types that can be converted into a strict 'ByteString'
 -- and be shown in a log.
 class LogShowable a where
-  logShow :: a -> ByteString
+  logShow :: a -> ByteString -- | Convert the type into a strict 'ByteString' to be displayed in the logs.
 
 instance LogShowable ByteString where
   logShow = id
@@ -47,7 +47,7 @@ logFilterJSON = decodeStrict'
 -- | Typeclass for types that can be converted into from a strict 'ByteString' and will be used as
 -- arguments to 'LogFilter'
 class LogFilterable a where
-  prep :: ByteString -> Maybe a
+  prep :: ByteString -> Maybe a -- | Try to convert the type from a strict 'ByteString'.
 
 instance LogFilterable ByteString where
   prep = return
@@ -63,7 +63,7 @@ instance Loggable BL.ByteString where
 
 -- | Type that represents a log filtering function. If the return type
 -- is Nothing, then no log message will be created. Otherwise, a log message
--- will be created using the (potentially modified) returned value
+-- will be created using the (potentially different) returned value.
 type LogFilter a = a -> Maybe a
 
 logFilter :: (Loggable a) => ByteString -> LogFilter a -> Maybe a
