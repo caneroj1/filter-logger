@@ -1,9 +1,12 @@
 {-# OPTIONS_HADDOCK prune #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Middleware.FilterLogger.Internal where
 
 import           Control.Monad
+import           Data.Aeson
+import           Data.Aeson.Encode.Pretty
 import           Data.ByteString                      (ByteString)
 import qualified Data.ByteString                      as BS hiding (ByteString)
 import qualified Data.ByteString.Lazy                 as BL (ByteString,
@@ -31,6 +34,16 @@ instance LogShowable ByteString where
 instance LogShowable BL.ByteString where
   logShow = BL.toStrict
 
+-- | Helper function that can be used when you want to make an instance of 'ToJSON' an instance of
+-- 'LogShowable'. This helps avoid having to use UndecidableInstances.
+logShowJSON :: (ToJSON a) => a -> ByteString
+logShowJSON = BL.toStrict . encodePretty
+
+-- | Helper function that can be used when you want to make an instance of 'FromJSON' an instance of
+-- 'LogFilterable'. This helps avoid having to use UndecidableInstances.
+logFilterJSON :: (FromJSON a) => ByteString -> Maybe a
+logFilterJSON = decodeStrict'
+
 -- | Typeclass for types that can be converted into from a strict 'ByteString' and will be used as
 -- arguments to 'LogFilter'
 class LogFilterable a where
@@ -42,6 +55,7 @@ instance LogFilterable ByteString where
 instance LogFilterable BL.ByteString where
   prep = return . BL.fromStrict
 
+-- | Helper Typeclass for types that implement both 'LogFilterable' and 'LogShowable'
 class (LogFilterable a, LogShowable a) => Loggable a where
 
 instance Loggable ByteString where
@@ -57,7 +71,7 @@ logFilter bs lf = prep bs >>= lf
 
 -- | Given a valid 'LogFilter', construct a 'Middleware' value that
 -- will log messages where the request body of the incoming request passes
--- the filter.
+-- the filter. Accepts an optional 'Bool' parameter for detailed logging or not.
 mkFilterLogger :: (Loggable a) => Bool -> LogFilter a -> Middleware
 mkFilterLogger detailed lf = unsafePerformIO $
   mkRequestLogger def { outputFormat = CustomOutputFormatWithDetails $ customOutputFormatter detailed lf }
@@ -90,9 +104,3 @@ customOutputFormatter detail lf date req status responseSize time reqBody builde
       buildDetails detail <>
       logShow msg         <>
       "\n")
-
-
-
-
-
-
