@@ -1,3 +1,13 @@
+{-|
+Module      : Network.Wai.Middleware.FilterLogger.Internal
+Description : Internal module and core code
+Copyright   : (c) Joseph Canero, 2017
+License     : MIT
+Maintainer  : jmc41493@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
+
 {-# OPTIONS_HADDOCK prune #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
