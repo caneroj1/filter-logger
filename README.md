@@ -45,7 +45,7 @@ main = scotty 3000 $ do
   post "/" $ text "SUCCESS"
 
 filterPasswords =
-  mkFilterLogger True hidePasswords
+  mkDefaultFilterLogger hidePasswords
   where hidePasswords r@LoginRequest{..} = Just r {password = "*****"}
 
 ```
@@ -92,7 +92,7 @@ main = scotty 3000 $ do
   post "/" $ text "SUCCESS"
 
 filteringMiddleware =
-  mkFilterLogger True (keepShortBodies >=> containing 'c')
+  mkDefaultFilterLogger (keepShortBodies >=> containing 'c')
   where keepShortBodies bs
           | BS.length bs < 10 = Just bs
           | otherwise         = Nothing

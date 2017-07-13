@@ -15,6 +15,7 @@ Portability : POSIX
 
 module Network.Wai.Middleware.FilterLogger.Internal where
 
+import           Control.Applicative
 import           Control.Monad
 import           Data.Aeson
 import           Data.Aeson.Encode.Pretty
