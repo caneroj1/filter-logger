@@ -50,5 +50,5 @@ main = scotty 3000 $ do
   post "/" $ text "SUCCESS"
 
 filterPasswords =
-  mkFilterLogger True hidePasswords
+  mkDefaultFilterLogger hidePasswords
   where hidePasswords r@LoginRequest{..} = Just r {password = "*****"}

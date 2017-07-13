@@ -125,3 +125,9 @@ abdefghij
 ```
 
 you won't see anything in the server logs.
+
+## Customization
+
+Customizing the log filtering middleware can be done with the `FilterOptions` type. It supports two options currently:
+* Detailed logging: Includes the request duration in milliseconds and the response body size. `True` by default.
+* Log when the request body is empty: Boolean value indicating whether or not to create log messages when there is no request body. `True` by default.

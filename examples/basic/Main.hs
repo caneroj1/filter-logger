@@ -37,7 +37,7 @@ main = scotty 3000 $ do
   post "/" $ text "SUCCESS"
 
 filteringMiddleware =
-  mkFilterLogger True (keepShortBodies >=> containing 'c')
+  mkDefaultFilterLogger (keepShortBodies >=> containing 'c')
   where keepShortBodies bs
           | BS.length bs < 10 = Just bs
           | otherwise         = Nothing

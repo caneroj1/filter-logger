@@ -11,6 +11,7 @@ Portability : POSIX
 {-# OPTIONS_HADDOCK prune #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Network.Wai.Middleware.FilterLogger.Internal where
 
@@ -19,19 +20,37 @@ import           Data.Aeson
 import           Data.Aeson.Encode.Pretty
 import           Data.ByteString                      (ByteString)
 import qualified Data.ByteString                      as BS hiding (ByteString)
+import           Data.ByteString.Builder              (Builder)
 import qualified Data.ByteString.Lazy                 as BL (ByteString,
                                                              fromStrict,
                                                              toStrict)
 import           Data.Char
 import           Data.Default
 import           Data.Semigroup
+import           Data.Time.Clock                      (NominalDiffTime)
 import           Data.Word
 import           Network.HTTP.Types.Status
 import           Network.Wai
+import           Network.Wai.Logger
 import           Network.Wai.Middleware.RequestLogger
 import           System.IO.Unsafe
 import           System.Log.FastLogger
 import           Text.Printf                          (printf)
+
+-- | Options for controlling log filtering.
+data FilterOptions = FilterOptions {
+    -- | Boolean value indicating whether to log output should be detailed or not.
+    -- Details include the response size and request duration in ms.
+    -- Default is True.
+    detailed       :: Bool
+
+    -- | Boolean value indicating whether to log messages when there is no request body.
+    -- Default is True.
+  , logOnEmptyBody :: Bool
+  }
+
+instance Default FilterOptions where
+  def = FilterOptions True True
 
 -- | Typeclass for types that can be converted into a strict 'ByteString'
 -- and be shown in a log.
@@ -81,17 +100,27 @@ type LogFilter a = a -> Maybe a
 logFilter :: (Loggable a) => ByteString -> LogFilter a -> Maybe a
 logFilter bs lf = prep bs >>= lf
 
--- | Given a valid 'LogFilter', construct a 'Middleware' value that
--- will log messages where the request body of the incoming request passes
--- the filter. Accepts an optional 'Bool' parameter for detailed logging or not.
-mkFilterLogger :: (Loggable a) => Bool -> LogFilter a -> Middleware
-mkFilterLogger detailed lf = unsafePerformIO $
-  mkRequestLogger def { outputFormat = CustomOutputFormatWithDetails $ customOutputFormatter detailed lf }
+-- | Make a filtering request logger with the default 'FilterOptions'.
+mkDefaultFilterLogger :: (Loggable a) => LogFilter a -> Middleware
+mkDefaultFilterLogger = mkFilterLogger def
+
+-- | Given a valid 'LogFilter' and custom 'FilterOptions', construct a filtering request logger.
+mkFilterLogger :: (Loggable a) => FilterOptions -> LogFilter a -> Middleware
+mkFilterLogger opts lf = unsafePerformIO $
+  mkRequestLogger def { outputFormat = CustomOutputFormatWithDetails $ customOutputFormatter opts lf }
 {-# NOINLINE mkFilterLogger #-}
 
-customOutputFormatter :: (Loggable a) => Bool -> LogFilter a -> OutputFormatterWithDetails
-customOutputFormatter detail lf date req status responseSize time reqBody builder =
-  maybe mempty (logString detail) $ logFilter (BS.concat reqBody) lf
+customOutputFormatter :: (Loggable a) => FilterOptions -> LogFilter a -> OutputFormatterWithDetails
+customOutputFormatter FilterOptions{..} lf date req status responseSize time reqBody builder =
+  maybe mempty (buildLog detailed date req status responseSize time builder) bodyToLog
+  where bodyToLog
+          | null reqBody && logOnEmptyBody = Just BS.empty
+          | otherwise                      = logShow <$> logFilter (BS.concat reqBody) lf
+
+type MyOutputFormatter = ZonedDate -> Request -> Status -> Maybe Integer -> NominalDiffTime  -> Builder -> ByteString -> LogStr
+
+buildLog :: Bool -> MyOutputFormatter
+buildLog detail date req status responseSize time builder body = logString detail
   where
     toBS   = BS.pack . map (fromIntegral . ord)
 
@@ -100,7 +129,9 @@ customOutputFormatter detail lf date req status responseSize time reqBody builde
 
     inMS   = printf "%.2f" . dfromRational $ toRational time * 1000
 
-    header = date <> "\n" <>
+    header = rawPathInfo req    <>
+             rawQueryString req <> "\n" <>
+             date               <> "\n" <>
              toBS (show . fromIntegral $ statusCode status) <> " - " <> statusMessage status <> "\n"
 
     buildRespSize (Just s) = "Response Size: " <> toBS (show s) <> "\n"
@@ -111,8 +142,11 @@ customOutputFormatter detail lf date req status responseSize time reqBody builde
     buildDetails True  = buildRespSize responseSize <> buildDuration
     buildDetails False = ""
 
-    logString detailed msg = toLogStr (
+    formattedBody
+      | BS.null body = body
+      | otherwise    = body <> "\n"
+
+    logString detailed = toLogStr (
       header              <>
       buildDetails detail <>
-      logShow msg         <>
-      "\n")
+      formattedBody)

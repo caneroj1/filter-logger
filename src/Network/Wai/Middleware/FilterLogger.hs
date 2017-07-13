@@ -13,9 +13,12 @@ module Network.Wai.Middleware.FilterLogger
   module X
 ) where
 
-import           Network.Wai.Middleware.FilterLogger.Internal as X (LogFilter, LogFilterable (..),
+import           Network.Wai.Middleware.FilterLogger.Internal as X (FilterOptions (..),
+                                                                    LogFilter,
+                                                                    LogFilterable (..),
                                                                     LogShowable (..),
                                                                     Loggable,
                                                                     logFilterJSON,
                                                                     logShowJSON,
+                                                                    mkDefaultFilterLogger,
                                                                     mkFilterLogger)
