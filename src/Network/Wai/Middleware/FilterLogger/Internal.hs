@@ -129,10 +129,9 @@ buildLog detail date req status responseSize time builder body = logString detai
 
     inMS   = printf "%.2f" . dfromRational $ toRational time * 1000
 
-    header = rawPathInfo req    <>
-             rawQueryString req <> "\n" <>
-             date               <> "\n" <>
-             toBS (show . fromIntegral $ statusCode status) <> " - " <> statusMessage status <> "\n"
+    header = colorizedUrl        <> "\n" <>
+             date                <> "\n" <>
+             colorizedStatusCode <> "\n"
 
     buildRespSize (Just s) = "Response Size: " <> toBS (show s) <> "\n"
     buildRespSize Nothing  = ""
@@ -144,9 +143,19 @@ buildLog detail date req status responseSize time builder body = logString detai
 
     formattedBody
       | BS.null body = body
-      | otherwise    = body <> "\n"
+      | otherwise    = yellow $ body <> "\n"
 
     logString detailed = toLogStr (
       header              <>
       buildDetails detail <>
       formattedBody)
+
+    colorizedUrl = cyan $ rawPathInfo req <> rawQueryString req
+
+    colorizedStatusCode
+      | code < 300 = green str
+      | code < 400 = yellow str
+      | otherwise  = red str
+      where str = toBS (show code) <> " " <> codeMsg
+            code = statusCode status
+            codeMsg = statusMessage status

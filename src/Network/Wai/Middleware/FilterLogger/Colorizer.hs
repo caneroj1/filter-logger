@@ -28,3 +28,6 @@ yellow = colored Yellow
 
 green :: ByteString -> ByteString
 green = colored Green
+
+cyan :: ByteString -> ByteString
+cyan = colored Cyan
