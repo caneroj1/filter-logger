@@ -17,9 +17,11 @@ library
   hs-source-dirs:      src
   exposed-modules:     Network.Wai.Middleware.FilterLogger
                      , Network.Wai.Middleware.FilterLogger.Internal
+  other-modules:       Network.Wai.Middleware.FilterLogger.Colorizer
   build-depends:       base >= 4.6 && < 5
                      , aeson
                      , aeson-pretty
+                     , ansi-terminal
                      , bytestring
                      , data-default
                      , fast-logger

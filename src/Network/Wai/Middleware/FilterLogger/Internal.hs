@@ -19,24 +19,25 @@ import           Control.Applicative
 import           Control.Monad
 import           Data.Aeson
 import           Data.Aeson.Encode.Pretty
-import           Data.ByteString                      (ByteString)
-import qualified Data.ByteString                      as BS hiding (ByteString)
-import           Data.ByteString.Builder              (Builder)
-import qualified Data.ByteString.Lazy                 as BL (ByteString,
-                                                             fromStrict,
-                                                             toStrict)
+import           Data.ByteString                               (ByteString)
+import qualified Data.ByteString                               as BS hiding (ByteString)
+import           Data.ByteString.Builder                       (Builder)
+import qualified Data.ByteString.Lazy                          as BL (ByteString,
+                                                                      fromStrict,
+                                                                      toStrict)
 import           Data.Char
 import           Data.Default
 import           Data.Semigroup
-import           Data.Time.Clock                      (NominalDiffTime)
+import           Data.Time.Clock                               (NominalDiffTime)
 import           Data.Word
 import           Network.HTTP.Types.Status
 import           Network.Wai
 import           Network.Wai.Logger
+import           Network.Wai.Middleware.FilterLogger.Colorizer
 import           Network.Wai.Middleware.RequestLogger
 import           System.IO.Unsafe
 import           System.Log.FastLogger
-import           Text.Printf                          (printf)
+import           Text.Printf                                   (printf)
 
 -- | Options for controlling log filtering.
 data FilterOptions = FilterOptions {
@@ -123,8 +124,6 @@ type MyOutputFormatter = ZonedDate -> Request -> Status -> Maybe Integer -> Nomi
 buildLog :: Bool -> MyOutputFormatter
 buildLog detail date req status responseSize time builder body = logString detail
   where
-    toBS   = BS.pack . map (fromIntegral . ord)
-
     dfromRational :: Rational -> Double
     dfromRational = fromRational
 
